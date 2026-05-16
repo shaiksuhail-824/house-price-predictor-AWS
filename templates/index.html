@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>House Price Predictor</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f0f4f8;
+            padding: 30px 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 36px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #2d3748;
+            margin-bottom: 6px;
+            font-size: 26px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 28px;
+            font-size: 14px;
+        }
+        .section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #4a5568;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin: 24px 0 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        .field {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-size: 13px;
+            color: #4a5568;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        input, select {
+            padding: 9px 12px;
+            border: 1.5px solid #cbd5e0;
+            border-radius: 7px;
+            font-size: 14px;
+            color: #2d3748;
+            background: #f7fafc;
+            transition: border 0.2s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #4c72b0;
+            background: white;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #4c72b0;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 28px;
+            transition: background 0.2s;
+        }
+        button:hover { background: #3a5a9a; }
+        .result {
+            margin-top: 22px;
+            padding: 18px;
+            background: #f0fff4;
+            border: 2px solid #68d391;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 22px;
+            font-weight: 700;
+            color: #276749;
+        }
+        .error {
+            margin-top: 22px;
+            padding: 18px;
+            background: #fff5f5;
+            border: 2px solid #fc8181;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 15px;
+            color: #c53030;
+        }
+        @media(max-width: 540px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>🏠 House Price Predictor</h2>
+    <p class="subtitle">Gradient Boosting Model — Ames Housing Dataset</p>
+
+    <form action="/predict" method="POST">
+
+        <!-- NUMERICAL FEATURES -->
+        <div class="section-title">📐 Size &amp; Area</div>
+        <div class="grid">
+            <div class="field">
+                <label>Lot Frontage (ft)</label>
+                <input type="number" name="LotFrontage" value="70" min="0" required>
+            </div>
+            <div class="field">
+                <label>Lot Area (sq ft)</label>
+                <input type="number" name="LotArea" value="8000" min="0" required>
+            </div>
+            <div class="field">
+                <label>Above Ground Living Area (sq ft)</label>
+                <input type="number" name="GrLivArea" value="1500" min="0" required>
+            </div>
+            <div class="field">
+                <label>Total Basement Area (sq ft)</label>
+                <input type="number" name="TotalBsmtSF" value="800" min="0" required>
+            </div>
+            <div class="field">
+                <label>Masonry Veneer Area (sq ft)</label>
+                <input type="number" name="MasVnrArea" value="0" min="0" required>
+            </div>
+            <div class="field">
+                <label>Wood Deck Area (sq ft)</label>
+                <input type="number" name="WoodDeckSF" value="0" min="0" required>
+            </div>
+            <div class="field">
+                <label>Open Porch Area (sq ft)</label>
+                <input type="number" name="OpenPorchSF" value="0" min="0" required>
+            </div>
+        </div>
+
+        <div class="section-title">🏗️ Quality &amp; Age</div>
+        <div class="grid">
+            <div class="field">
+                <label>Overall Quality (1–10)</label>
+                <input type="number" name="OverallQual" value="5" min="1" max="10" required>
+            </div>
+            <div class="field">
+                <label>Year Built</label>
+                <input type="number" name="YearBuilt" value="2000" min="1800" max="2025" required>
+            </div>
+            <div class="field">
+                <label>Year Remodelled</label>
+                <input type="number" name="YearRemodAdd" value="2000" min="1800" max="2025" required>
+            </div>
+        </div>
+
+        <div class="section-title">🚿 Rooms &amp; Garage</div>
+        <div class="grid">
+            <div class="field">
+                <label>Full Bathrooms</label>
+                <input type="number" name="FullBath" value="2" min="0" max="5" required>
+            </div>
+            <div class="field">
+                <label>Half Bathrooms</label>
+                <input type="number" name="HalfBath" value="0" min="0" max="3" required>
+            </div>
+            <div class="field">
+                <label>Fireplaces</label>
+                <input type="number" name="Fireplaces" value="0" min="0" max="4" required>
+            </div>
+            <div class="field">
+                <label>Garage Cars (capacity)</label>
+                <input type="number" name="GarageCars" value="2" min="0" max="5" required>
+            </div>
+        </div>
+
+        <!-- CATEGORICAL FEATURES -->
+        <div class="section-title">📍 Location &amp; Zoning</div>
+        <div class="grid">
+            <div class="field">
+                <label>MS Zoning</label>
+                <select name="MSZoning">
+                    <option value="RL" selected>RL – Residential Low Density</option>
+                    <option value="RM">RM – Residential Medium Density</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Lot Shape</label>
+                <select name="LotShape">
+                    <option value="Reg" selected>Reg – Regular</option>
+                    <option value="Other">Other (IR1/IR2/IR3)</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Neighborhood</label>
+                <select name="Neighborhood">
+                    <option value="Other" selected>Other</option>
+                    <option value="NoRidge">NoRidge – Northridge</option>
+                    <option value="NridgHt">NridgHt – Northridge Heights</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="section-title">🧱 Exterior &amp; Foundation</div>
+        <div class="grid">
+            <div class="field">
+                <label>Exterior 1st Material</label>
+                <select name="Exterior1st">
+                    <option value="VinylSd" selected>VinylSd – Vinyl Siding</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Exterior 2nd Material</label>
+                <select name="Exterior2nd">
+                    <option value="VinylSd" selected>VinylSd – Vinyl Siding</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Masonry Veneer Type</label>
+                <select name="MasVnrType">
+                    <option value="None" selected>None</option>
+                    <option value="Stone">Stone</option>
+                    <option value="BrkFace">BrkFace</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Exterior Quality</label>
+                <select name="ExterQual">
+                    <option value="Ex">Ex – Excellent</option>
+                    <option value="Gd">Gd – Good</option>
+                    <option value="TA" selected>TA – Average</option>
+                    <option value="Fa">Fa – Fair</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Foundation</label>
+                <select name="Foundation">
+                    <option value="PConc" selected>PConc – Poured Concrete</option>
+                    <option value="CBlock">CBlock – Cinder Block</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="section-title">🏚️ Basement</div>
+        <div class="grid">
+            <div class="field">
+                <label>Basement Quality</label>
+                <select name="BsmtQual">
+                    <option value="Ex">Ex – Excellent</option>
+                    <option value="Gd">Gd – Good</option>
+                    <option value="TA" selected>TA – Average</option>
+                    <option value="Fa">Fa – Fair</option>
+                    <option value="None">None – No Basement</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Basement Exposure</label>
+                <select name="BsmtExposure">
+                    <option value="Gd">Gd – Good</option>
+                    <option value="Av">Av – Average</option>
+                    <option value="Mn">Mn – Minimum</option>
+                    <option value="No" selected>No – None</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Basement Finish Type</label>
+                <select name="BsmtFinType1">
+                    <option value="GLQ">GLQ – Good Living Quarters</option>
+                    <option value="ALQ">ALQ – Average</option>
+                    <option value="Unf" selected>Unf – Unfinished</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="section-title">⚙️ Utilities &amp; Systems</div>
+        <div class="grid">
+            <div class="field">
+                <label>Heating Quality</label>
+                <select name="HeatingQC">
+                    <option value="Ex" selected>Ex – Excellent</option>
+                    <option value="Gd">Gd – Good</option>
+                    <option value="TA">TA – Average</option>
+                    <option value="Fa">Fa – Fair</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Central Air Conditioning</label>
+                <select name="CentralAir">
+                    <option value="Y" selected>Y – Yes</option>
+                    <option value="N">N – No</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Electrical System</label>
+                <select name="Electrical">
+                    <option value="SBrkr" selected>SBrkr – Standard</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Kitchen Quality</label>
+                <select name="KitchenQual">
+                    <option value="Ex">Ex – Excellent</option>
+                    <option value="Gd">Gd – Good</option>
+                    <option value="TA" selected>TA – Average</option>
+                    <option value="Fa">Fa – Fair</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Fireplace Quality</label>
+                <select name="FireplaceQu">
+                    <option value="None" selected>None – No Fireplace</option>
+                    <option value="Gd">Gd – Good</option>
+                    <option value="TA">TA – Average</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="section-title">🚗 Garage</div>
+        <div class="grid">
+            <div class="field">
+                <label>Garage Type</label>
+                <select name="GarageType">
+                    <option value="Attchd" selected>Attchd – Attached</option>
+                    <option value="Detchd">Detchd – Detached</option>
+                    <option value="None">None – No Garage</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Garage Finish</label>
+                <select name="GarageFinish">
+                    <option value="Fin">Fin – Finished</option>
+                    <option value="RFn">RFn – Rough Finished</option>
+                    <option value="Unf" selected>Unf – Unfinished</option>
+                    <option value="None">None – No Garage</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Garage Quality</label>
+                <select name="GarageQual">
+                    <option value="TA" selected>TA – Average</option>
+                    <option value="None">None – No Garage</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Garage Condition</label>
+                <select name="GarageCond">
+                    <option value="TA" selected>TA – Average</option>
+                    <option value="None">None – No Garage</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Paved Driveway</label>
+                <select name="PavedDrive">
+                    <option value="Y" selected>Y – Paved</option>
+                    <option value="P">P – Partial</option>
+                    <option value="N">N – Dirt/Gravel</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="section-title">📋 Sale Info</div>
+        <div class="grid">
+            <div class="field">
+                <label>Sale Type</label>
+                <select name="SaleType">
+                    <option value="WD" selected>WD – Warranty Deed</option>
+                    <option value="New">New – New Construction</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Sale Condition</label>
+                <select name="SaleCondition">
+                    <option value="Normal" selected>Normal</option>
+                    <option value="Partial">Partial – Not Complete at Sale</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="submit">🔍 Predict House Price</button>
+    </form>
+
+    {% if prediction %}
+        {% if "Error" in prediction %}
+            <div class="error">{{ prediction }}</div>
+        {% else %}
+            <div class="result">{{ prediction }}</div>
+        {% endif %}
+    {% endif %}
+
+</div>
+</body>
+</html>
